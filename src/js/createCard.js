@@ -1,30 +1,29 @@
-export {createTodo}
+// createCard.js
+export { createTodo };
 
-const createTodo = (todoTitle, todoDescription, todoImg, todoUser, todoId) => {
+const createTodo = (todoTitle, todoDescription, todoImg, todoUser, todoDateTime, todoId, todoColumn) => {
     const todoCase = document.createElement("div");
     todoCase.className = "card__todo";
+    todoCase.dataset.trelloId = todoId;
 
     const cardTop = document.createElement("div");
     cardTop.className = "card_top";
 
     const todoTitleHead = document.createElement("h3");
     todoTitleHead.className = "card__todo-title title4";
-    const todoTitleText = document.createTextNode(todoTitle);
+    todoTitleHead.textContent = todoTitle;
 
     const todoDate = document.createElement("div");
-    const date = new Date().toLocaleTimeString();
     todoDate.className = "card__todo-title";
+    todoDate.textContent = todoDateTime;
 
     const todoDescriptionCard = document.createElement("div");
     todoDescriptionCard.className = "todo-description";
-    const todoDescriptionText = document.createTextNode(todoDescription);
+    todoDescriptionCard.textContent = todoDescription;
 
     todoCase.append(cardTop);
     cardTop.append(todoTitleHead);
-    todoTitleHead.append(todoTitleText);
     cardTop.append(todoDate);
-    todoDate.append(date);
-    todoDescriptionCard.append(todoDescriptionText);
     todoCase.append(todoDescriptionCard);
 
     const cardBottom = document.createElement("div");
@@ -35,13 +34,11 @@ const createTodo = (todoTitle, todoDescription, todoImg, todoUser, todoId) => {
 
     const todoAuthor = document.createElement("img");
     todoAuthor.className = "card__todo-author";
-    const imgAtr = document.createAttribute('src');
-    imgAtr.value = todoImg;
-    todoAuthor.setAttributeNode(imgAtr);
+    todoAuthor.src = todoImg;
 
     const todoUserName = document.createElement("p");
-    const todoUserNameText = document.createTextNode(todoUser);
     todoUserName.className = "todo__user-name";
+    todoUserName.textContent = todoUser;
 
     const cardEdit = document.createElement("div");
     cardEdit.className = "card__todo-btns";
@@ -67,10 +64,5 @@ const createTodo = (todoTitle, todoDescription, todoImg, todoUser, todoId) => {
     cardEdit.append(linkDelete);
     linkEdit.append(linkEditPicture);
     linkDelete.append(linkDeletePicture);
-    todoUserName.append(todoUserNameText);
-
-    todoCase.dataset.trelloId = todoId;
-    todoCase.setAttribute('id', 'todo-id');
-
     return todoCase;
 }

@@ -20,7 +20,7 @@ export const userAvatar = (randomNum) => {
 
 
     let imgAtr = document.createAttribute('src');
-    imgAtr.value = ('https://avatars.dicebear.com/api/bottts/${randomNum}.svg;')
+    imgAtr.value = (`https://api.dicebear.com/9.x/pixel-art/${randomNum}svg`);
     todoImg.setAttributeNode(imgAtr);
 
     div.append(todoImg);
@@ -28,7 +28,6 @@ export const userAvatar = (randomNum) => {
 
     return div
 }
-
 
 export const userAvatarEdit = (randomNum) => {
     const editDiv = document.getElementById('menu-edit');
@@ -41,7 +40,7 @@ export const userAvatarEdit = (randomNum) => {
     const todoImgEdit = document.createElement("img");
     todoImgEdit.className = "ui mini avatar image";
     let imgEditAtr = document.createAttribute('src');
-    imgEditAtr.value = ('https://avatars.dicebear.com/api/bottts/${randomNum}.svg;')
+    imgEditAtr.value = (`https://api.dicebear.com/9.x/pixel-art/${randomNum}svg`);
     todoImgEdit.setAttributeNode(imgEditAtr);
 
     divEdit.append(todoImgEdit)

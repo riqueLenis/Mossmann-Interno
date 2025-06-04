@@ -2,8 +2,6 @@ import {swiperMode} from './responsive.js'
 import {createTodo} from './createCard.js'
 import {randomNum, userAvatar, userAvatarEdit, userName} from './usersGenerate.js'
 
-
-
 window.addEventListener('load', function() {
 	swiperMode();
 });
@@ -19,7 +17,7 @@ for (let i = 0; i < 11; i++) {
 	userAvatarEdit(i)
 }
 
-//criação de models
+//criaçao de models
 let userArr = document.getElementById('menu').children;
 let userArrEdit = document.getElementById('menu-edit').children;
 
@@ -39,9 +37,8 @@ userName().then(users => {
 	}
 });
 
-
-
-const storage = {
+//antes salvava no navegador
+/*const storage = {
 	getDataByKey: function (key) {
 		if (localStorage.getItem(key) !== null) {
 			return JSON.parse(localStorage.getItem(key));
@@ -54,7 +51,7 @@ const storage = {
 		dataByKey = [...dataByKey, data];
 		localStorage.setItem(key, JSON.stringify(dataByKey));
 	},
-};
+};*/
 
 let todos =  [];
 
@@ -62,27 +59,38 @@ const inProgressColumn = document.querySelector('.dashboard__cards-inProgress');
 const cardTodoColumn = document.querySelector('.dashboard__cards-todo');
 const doneColumn = document.querySelector('.dashboard__cards-done');
 
-
-
+//req cards acmossmann
 const checkTodos = () => {
-	const cards = storage.getDataByKey('cards');
-	if (cards) {
-		todos = [...todos, ...cards.map(card => new TodoConstructor(card.todoTitle, card.todoDescription, card.todoImg, card.todoUser, card.todoId, card.todoColumn))];
-	}
-	for (const card of cards) {
-		if (+card.todoColumn === +cardTodoColumn.dataset.columnId) {
-			cardTodoColumn.append(createTodo(card.todoTitle, card.todoDescription, card.todoImg, card.todoUser, card.todoId, card.todoColumn));
-		} else if (+card.todoColumn === +inProgressColumn.dataset.columnId) {
-			inProgressColumn.append(createTodo(card.todoTitle, card.todoDescription, card.todoImg, card.todoUser, card.todoId, card.todoColumn));
-		} else if (+card.todoColumn === +doneColumn.dataset.columnId) {
-			doneColumn.append(createTodo(card.todoTitle, card.todoDescription, card.todoImg, card.todoUser, card.todoId, card.todoColumn));
-		}
-	}
+    fetch('https://acmossmann.com.br/cards')
+        .then(res => res.json())
+        .then(cards => {
+            for (const card of cards) {
+                const horaFormatada = new Date(card.horario).toLocaleString('pt-BR', {
+                    timeZone: 'America/Campo_Grande'
+                });
+                const el = createTodo(
+                    card.titulo,
+                    card.descricao,
+                    card.avatar,
+                    card.autor,
+                    horaFormatada,
+                    card.id,
+                    card.coluna
+                );
 
+                if (+card.coluna === +cardTodoColumn.dataset.columnId) {
+                    cardTodoColumn.append(el);
+                } else if (+card.coluna === +inProgressColumn.dataset.columnId) {
+                    inProgressColumn.append(el);
+                } else if (+card.coluna === +doneColumn.dataset.columnId) {
+                    doneColumn.append(el);
+                }
+            }
+        })
+        .catch(err => console.error('Erro ao carregar card do banco', err));
 }
 
 // DragNDrop
-
 let containerTdo = document.querySelector('.dashboard__cards-todo');
 let containerInProgress = document.querySelector('.dashboard__cards-inProgress');
 let containerDone = document.querySelector('.dashboard__cards-done');
@@ -94,18 +102,21 @@ drake.on('drop', function(el, target, source, sibling) {
    if (target === containerInProgress && target.children.length >= 6) {
       $('.ui.modal.pop-up__inprogress').modal({blurring: true}, {observeChanges: true}).modal('show')
    }
-	for (const todo of todos) {
-		if (+todo.todoId === +el.dataset.trelloId) {
-			todo.todoColumn = target.dataset.columnId
-		}
-	}
-	localStorage.setItem('cards', JSON.stringify(todos));
+	const cardId = el.dataset.trelloId;
+	const novaColuna = target.dataset.columnId;
+
+	fetch(`https://acmossmann.com.br/cards/${cardId}`,{
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ coluna: novaColuna })
+	})
+	.then(res => {
+		if (!res.ok) throw new Error('falha ao atualizar coluna card');
+	})
+	.catch(err => console.error('Erro ao mover card:', err));
 });
 
-
-
 //pesquisa
-
 const searchModul = document.querySelectorAll('.search__box');
 
 searchModul.forEach(it => {
@@ -125,9 +136,7 @@ searchModul.forEach(it => {
 	});
 });
 
-
 //add novos cards
-
 const TodoConstructor = function (todoTitle, todoDescription, todoImg, todoUser, todoId, todoColumn) {
 	this.todoTitle = todoTitle;
 	this.todoDescription = todoDescription;
@@ -137,16 +146,13 @@ const TodoConstructor = function (todoTitle, todoDescription, todoImg, todoUser,
 	this.todoColumn = todoColumn;
 }
 
-
-
-//Get access
+//get access
 const approveBtn = document.getElementById("approveBtn");
 const cardTodo = document.getElementById("todoCase");
 const inputTitle = document.getElementById('inputTitle');
 const inputDescription = document.getElementById('inputDescription');
 
-// Open add todo modal
-
+//abre e add modals
 const btnAdd = document.getElementById('btn-add');
 btnAdd.addEventListener('click', () => {
 	inputTitle.value = '';
@@ -167,72 +173,75 @@ btnAdd.addEventListener('click', () => {
 	$('.ui.dropdown').dropdown('restore defaults');
 })
 
-
-//Create trello card
-
+//criando card
 approveBtn.addEventListener('click', () => {
-	if (inputTitle.value === '' && inputDescription.value === ''){
-		$('#form-add').form({
-			fields: {
-				title: 'empty',
-				description: 'empty',
-			},
-		})
-	} else if (inputTitle.value === '') {
-		$('#form-add').form({
-			fields: {
-				title: 'empty',
-			}
-		})
-	} else if (inputDescription.value === ''){
-		$('#form-add').form({
-			fields: {
-				description: 'empty'
-			}
-		})
-	} else {
-		const currentUser = $('#selection').dropdown('get value');
-		let currentName = currentUser.split(' ').join('_');
-		if(currentName.includes('.')){
-			currentName = currentName.split('.').join('_');
-		}
-		const el = document.querySelector(`[data-value = ${currentName}]`);
-		const userImage = el.firstChild;
-		const imgAvatar = userImage.src;
-		const todoUser = el.textContent;
-		const todoId = Date.now();
-		const column = "1";
+    if (inputTitle.value === '' || inputDescription.value === '') {
+        $('#form-add').form({
+            fields: {
+                title: 'empty',
+                description: 'empty',
+            }
+        });
+        return;
+    }
+    const currentUser = $('#selection').dropdown('get value');
+    let currentName = currentUser.split(' ').join('_').replaceAll('.', '_');
+    const el = document.querySelector(`[data-value=${currentName}]`);
+    const userImage = el.firstChild.src;
+    const todoUser = el.textContent;
+    const horario = new Date().toISOString();
+    const column = "1";
 
-		const todo = new TodoConstructor(inputTitle.value, document.getElementById('inputDescription').value, imgAvatar, todoUser, todoId, column);
-		cardTodo.append(createTodo(inputTitle.value, document.getElementById('inputDescription').value, imgAvatar, todoUser, todoId, column));
-		todos.push(todo);
-		storage.pushDataByKey('cards', todo);
-	}
-})
+    fetch('https://acmossmann.com.br/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            titulo: inputTitle.value,
+            descricao: inputDescription.value,
+            autor: todoUser,
+            horario,
+            avatar: userImage,
+            coluna: column
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const horaFormatada = new Date(data.horario).toLocaleString('pt-BR', {
+            timeZone: 'America/Campo_Grande'
+        });
+        cardTodo.append(createTodo(
+            data.titulo,
+            data.descricao,
+            data.avatar,
+            data.autor,
+            horaFormatada,
+            data.id,
+            data.coluna
+        ));
+    })
+    .catch(err => console.error('Erro ao salvar card:', err));
+});
 
-
-// Pop ups
-
+//popUps
 checkTodos();
 
 let btnDeleteAll = document.querySelector('.btn__delete');
 let btnDeleteConfirm = document.querySelector('.btn--dark');
 let dashboardDone = document.querySelector('.dashboard__cards-done');
 
-
 root.addEventListener('click', (event) => {
-	if (event.target.dataset.type === 'delete-one') {
-		const trelloId = document.getElementById('todo-id');
-		const currentTrello = event.target.closest('.card__todo');
-		if (todos.length) {
-			todos = todos.filter(todo => +todo.todoId !== +currentTrello.dataset.trelloId);
-			currentTrello.remove();
-			localStorage.setItem("cards", JSON.stringify(todos));
-		} else {
-			localStorage.clear();
-			trelloId.remove()
-		}
-	} if (event.target.dataset.type === 'edit-card') {
+	const currentTrello = event.target.closest('.card__todo');
+	if (!currentTrello) return;
+	fetch(`https://acmossmann.com.br/cards/${currentTrello.dataset.trelloId}`, {
+		method: 'DELETE'
+	})
+	.then(res => {
+		if (!res.ok) throw new Error('Erro ao deletar card');
+		currentTrello.remove();
+	})
+	.catch(err => console.error('Erro ao deletar card', err));
+
+	if (event.target.dataset.type === 'edit-card') {
 		const inputTitle = document.getElementById('title-edit');
 		const inputDescription = document.getElementById('desc-edit');
 		const editBtn = document.getElementById('editBtn');
@@ -278,7 +287,7 @@ root.addEventListener('click', (event) => {
 		let clickedImg = clicked.querySelector('.card__todo-author');
 		let clickedUser = clicked.querySelector('.todo__user-name');
 
-		editBtn.addEventListener('click', () => {
+		editBtn.addEventListener ('click', () => {
 			if (inputTitle.value === '' && inputDescription.value === ''){
 				$('#form-edit').form({
 					fields: {
@@ -311,27 +320,36 @@ root.addEventListener('click', (event) => {
 					clickedImg.src = elCurrent.querySelector('.ui.mini.avatar.image').src;
 					clickedUser.textContent = elCurrent.textContent;
 				}
-				for (const todo of todos) {
-					if (+todo.todoId === +clicked.dataset.trelloId) {
-						todo.todoTitle = inputTitle.value;
-						todo.todoDescription = inputDescription.value;
-						todo.todoImg = clickedImg.src;
-						todo.todoUser = clickedUser.textContent;
-					}
-				}
-				localStorage.setItem('cards', JSON.stringify(todos));
+				fetch(`https://acmossmann.com.br/cards/${clicked.dataset.trelloId}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						titulo: inputTitle.value,
+						descricao: inputDescription.value,
+						autor: clickedUser.textContent,
+						avatar: clickedImg.src
+					})
+				})
+				.then(res => {
+					if (!res.ok) throw new Error('Falha ao editar card');
+				})
+				.catch(err => console.error('Erro ao editar card:', err));
 			}
 		})
-
 	}
 })
 
-
 btnDeleteConfirm.addEventListener("click", (event) => {
-		$('.ui.modal.pop-up__delete-all').modal({blurring: true}).modal('show');
-		todos = todos.filter(todo => +todo.todoColumn !== +doneColumn.dataset.columnId);
-		dashboardDone.innerHTML = '';
-		localStorage.setItem("cards", JSON.stringify(todos));
+    $('.ui.modal.pop-up__delete-all').modal({blurring: true}).modal('show');
+    
+    fetch(`https://acmossmann.com.br/cards/finalizados`, {
+        method: 'DELETE'
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Erro ao deletar finalizados');
+        dashboardDone.innerHTML = '';
+    })
+    .catch(err => console.error('Erro ao deletar finalizados', err));
 });
 
 btnDeleteAll.addEventListener("click", (event) => {
@@ -341,4 +359,3 @@ btnDeleteAll.addEventListener("click", (event) => {
 		return containerDone;
 	}
 })
-
