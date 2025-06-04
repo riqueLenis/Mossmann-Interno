@@ -28,3 +28,5 @@ Biblioteca DiceBear.
 Chrome;
 Firefox;
 Edge.
+
+![cap](https://github.com/user-attachments/assets/a108cefe-154b-492f-ba8c-aed99e33a832)
